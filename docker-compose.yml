@@ -1,0 +1,113 @@
+version: '3.8'
+
+services:
+  # Main application
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://llm_user:llm_password@postgres:5432/llm_query_db
+      - PINECONE_API_KEY=${PINECONE_API_KEY}
+      - PINECONE_ENVIRONMENT=${PINECONE_ENVIRONMENT:-us-west1-gcp}
+      - PINECONE_INDEX_NAME=${PINECONE_INDEX_NAME:-document-embeddings}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - BEARER_TOKEN=${BEARER_TOKEN:-91d7c7fcc021f2f76b4d43c446b643214c2c13990085887798a744e2ca692e69}
+      - ENVIRONMENT=production
+      - LOG_LEVEL=INFO
+      - MAX_DOCUMENT_SIZE_MB=50
+      - EMBEDDING_DIMENSION=384
+      - SIMILARITY_THRESHOLD=0.7
+      - MAX_SEARCH_RESULTS=10
+      - MAX_CONTEXT_CHUNKS=5
+      - MIN_CONFIDENCE_THRESHOLD=0.6
+      - RATE_LIMIT_REQUESTS=100
+      - RATE_LIMIT_WINDOW_SECONDS=3600
+      - REQUEST_TIMEOUT_SECONDS=30
+      - RETRY_ATTEMPTS=3
+      - MAX_CHUNK_SIZE=1000
+      - CHUNK_OVERLAP=200
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - app_logs:/app/logs
+      - app_data:/app/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # PostgreSQL database
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_DB=llm_query_db
+      - POSTGRES_USER=llm_user
+      - POSTGRES_PASSWORD=llm_password
+      - POSTGRES_INITDB_ARGS=--encoding=UTF-8 --lc-collate=C --lc-ctype=C
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql:ro
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U llm_user -d llm_query_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis for caching (optional)
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
+  # Nginx reverse proxy
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - nginx_logs:/var/log/nginx
+    depends_on:
+      - app
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  app_logs:
+    driver: local
+  app_data:
+    driver: local
+  nginx_logs:
+    driver: local
+
+networks:
+  default:
+    driver: bridge
