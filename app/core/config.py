@@ -66,9 +66,12 @@ class Settings(BaseSettings):
     @field_validator("database_url")
     @classmethod
     def validate_database_url(cls, v):
-        if not (v.startswith("postgresql://") or v.startswith("postgresql+asyncpg://")):
-            raise ValueError("Database URL must be a PostgreSQL connection string")
-        return v
+        """Ensure the database URL is compatible with the async driver."""
+        if v.startswith("postgresql+psycopg://"):
+            return v
+        if v.startswith("postgresql://"):
+            return v.replace("postgresql://", "postgresql+psycopg://")
+        raise ValueError("Database URL must be a valid PostgreSQL connection string")
     
     @field_validator("similarity_threshold")
     @classmethod
