@@ -237,8 +237,10 @@ protobuf==4.25.8
     #   proto-plus
 psutil==7.0.0
     # via -r requirements.in
-psycopg2-binary==2.9.10
+psycopg[binary]==3.2.9
     # via -r requirements.in
+psycopg-binary==3.2.9
+    # via psycopg
 pyasn1==0.6.1
     # via
     #   pyasn1-modules
@@ -373,12 +375,15 @@ typing-extensions==4.14.1
     #   limits
     #   mypy
     #   pinecone
+    #   psycopg
     #   pydantic
     #   pydantic-core
     #   python-docx
     #   sentence-transformers
     #   sqlalchemy
     #   torch
+tzdata==2025.2
+    # via psycopg
 urllib3==2.5.0
     # via
     #   -r requirements.in

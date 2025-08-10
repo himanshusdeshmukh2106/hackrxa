@@ -33,7 +33,8 @@ FROM python:3.11-slim as production
 # Set environment variables
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
-    PYTHONPATH=/app
+    PYTHONPATH=/app \
+    SENTENCE_TRANSFORMERS_HOME=/app/data/.cache
 
 # Install runtime dependencies
 RUN apt-get update && apt-get install -y \
