@@ -61,7 +61,8 @@ aioredis==2.0.1
 psutil==7.0.0
 
 # Database drivers
-psycopg[binary]
+psycopg
+psycopg-binary
 
 
 # Additional utilities

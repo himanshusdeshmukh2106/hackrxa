@@ -237,10 +237,10 @@ protobuf==4.25.8
     #   proto-plus
 psutil==7.0.0
     # via -r requirements.in
-psycopg[binary]==3.2.9
+psycopg==3.2.9
     # via -r requirements.in
 psycopg-binary==3.2.9
-    # via psycopg
+    # via -r requirements.in
 pyasn1==0.6.1
     # via
     #   pyasn1-modules
